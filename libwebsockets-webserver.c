@@ -13,8 +13,14 @@ static int callback_http( struct libwebsocket_context *context,
 {
 	switch ( reason )
 	{
+		case LWS_CALLBACK_ESTABLISHED:
+			printf( "Connection established.\n" );
+			break;
 		case LWS_CALLBACK_CLIENT_WRITEABLE:
 			printf( "Connection established.\n" );
+			break;
+		case LWS_CALLBACK_PROTOCOL_INIT:
+			printf( "Protocol initialization.\n" );
 			break;
 		case LWS_CALLBACK_HTTP:
 			{
@@ -83,8 +89,42 @@ static int callback_http( struct libwebsocket_context *context,
 				
 				break;
 			}
+			case LWS_CALLBACK_HTTP_BODY:
+				printf( "HTTP request data is now available.\n" );
+				break;
+			case LWS_CALLBACK_HTTP_BODY_COMPLETION:
+				printf( "HTTP request data has been delivered.\n" );
+				break;
+			case LWS_CALLBACK_RECEIVE:
+				printf( "Data has arrived.\n" );
+				break;
+			case LWS_CALLBACK_HTTP_WRITEABLE:
+				printf( "HTTP link is writeable.\n" );
+				break;
+			case LWS_CALLBACK_CLOSED_HTTP:
+				printf( "HTTP session has ended.\n" );
+				break;
+			case LWS_CALLBACK_SERVER_NEW_CLIENT_INSTANTIATED:
+				printf( "New client has been instantiated.\n" );
+				break;
+			case LWS_CALLBACK_HTTP_FILE_COMPLETION:
+				printf( "HTTP file has been delivered.\n" );
+				break;
+		   case LWS_CALLBACK_GET_THREAD_ID:
+		   	printf( "Thread ID requested.\n" );
+		   	break;
+		   case LWS_CALLBACK_ADD_POLL_FD:
+		   	printf( "Added Poll file descriptor.\n" );
+		   	break;
+		   case LWS_CALLBACK_LOCK_POLL:
+		   	printf( "Lock Poll.\n" );
+		   	break;
+		   case LWS_CALLBACK_UNLOCK_POLL:
+		   	printf( "Unlock Poll.\n" );
+		   	break;
 			default:
 				printf( "Unhandled callback\n" );
+				printf( "Reason: %d\n", reason );
 				break;
 	}
 
