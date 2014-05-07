@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <libwebsockets.h>
+#include <json_spirit.h>
 
 static int callback_http( struct libwebsocket_context *context,
 								  struct libwebsocket *wsi,
@@ -29,10 +30,10 @@ static int callback_http( struct libwebsocket_context *context,
 				
 				if ( strcmp( requested_uri, "/" ) == 0 )
 				{
-					void *universal_response = "Hello, World!\n";
+					char *universal_response = ( char * ) "Hello, World!\n";
 					
-					libwebsocket_write( wsi, universal_response,
-											  strlen( universal_response ), LWS_WRITE_HTTP );
+					libwebsocket_write( wsi, ( unsigned char * ) universal_response,
+											  strlen( ( const char * ) universal_response ), LWS_WRITE_HTTP );
 											  
 					break;
 				}
@@ -43,7 +44,7 @@ static int callback_http( struct libwebsocket_context *context,
 					
 					if ( getcwd( cwd, sizeof( cwd ) ) != NULL )
 					{
-						resource_path = malloc( strlen( cwd ) + strlen( requested_uri ) );
+						resource_path = ( char * ) malloc( strlen( cwd ) + strlen( requested_uri ) );
 						
 						sprintf( resource_path, "%s%s", cwd, requested_uri );
 						printf( "Resource path: %s\n", resource_path );
@@ -111,7 +112,7 @@ static int callback_http( struct libwebsocket_context *context,
 				printf( "HTTP file has been delivered.\n" );
 				break;
 		   case LWS_CALLBACK_GET_THREAD_ID:
-		   	printf( "Thread ID requested.\n" );
+//		   	printf( "Thread ID requested.\n" );
 		   	break;
 		   case LWS_CALLBACK_ADD_POLL_FD:
 		   	printf( "Added Poll file descriptor.\n" );
@@ -131,10 +132,64 @@ static int callback_http( struct libwebsocket_context *context,
 	return 0;
 }
 
+static int callback_ws( struct libwebsocket_context *context,
+								  struct libwebsocket *wsi,
+								  enum libwebsocket_callback_reasons reason,
+								  void *user,
+								  void *in,
+								  size_t len )
+{
+	json_spirit::mObject Obj;
+	std::string jsonString;
+	
+	Obj[ "name" ] = json_spirit::mValue( "Calvin" );	
+
+	jsonString = json_spirit::write( Obj );
+
+	switch ( reason )
+	{
+		case LWS_CALLBACK_PROTOCOL_INIT:
+			printf( "Received the protocol init callback.\n" );
+			break;
+		case LWS_CALLBACK_ESTABLISHED:
+			printf( "Received LWS_CALLBACK_ESTABLISHED.\n" );
+			libwebsocket_callback_on_writable(context, wsi);
+			break;
+		case LWS_CALLBACK_CLOSED:
+			printf( "Received LWS_CALLBACK_CLOSED.\n" );
+			break;
+		case LWS_CALLBACK_SERVER_WRITEABLE:
+			{
+			printf( "Sending Data.\n" );
+			char *universal_response = "Hello, World!\n";
+//			libwebsocket_write( wsi, ( unsigned char * ) universal_response,
+//									  strlen( ( const char * ) universal_response ), LWS_WRITE_TEXT );
+			libwebsocket_write( wsi, ( unsigned char * ) jsonString.c_str(),
+									  jsonString.size(), LWS_WRITE_TEXT );
+			libwebsocket_callback_on_writable(context, wsi);
+			}
+			break;
+		case LWS_CALLBACK_RECEIVE:
+//			printf( "Received LWS_CALLBACK_RECEIVE.\n" );
+			break;
+		default:
+			printf( "Unhandled callback.\n" );
+			printf( "Reason: %d\n", reason );
+			break;
+	}
+	
+	return 0;
+}
+
 static struct libwebsocket_protocols protocols[] = {
 	{
 		"http-only",
 		callback_http,
+		0
+	},
+	{
+		"ws-only",
+		callback_ws,
 		0
 	},
 	{
